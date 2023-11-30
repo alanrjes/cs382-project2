@@ -112,24 +112,44 @@ class Map(Graph):
     def is_obstacle(self, x, y):
         return (x, y) not in self.vertices
 
-    def BFS(self, start_key):
+    def WFS(self, start_key, h):
+        # h takes parameters (k=key of vertex to be weighted, v=current vertex object, m=map object)
         # returns a dictionary of {key : {"d": distance of shortest path to node at key, "p": id of predecessor on shortest path}}
         shortestPaths = { k : {"d": inf, "p": None} for k in self.vertices}
         shortestPaths[start_key]["d"] = 0
-        self.traverse(self.vertices[start_key], 0, shortestPaths)
+        self.traverse(self.vertices[start_key], 0, shortestPaths, h)
         return shortestPaths
     
-    def traverse(self, v, d, shortestPaths):
+    def traverse(self, v, d, shortestPaths, h):
         # recursive helper for BFS
         if not v.visited:
-            for k in v.neighbors:
+            h_key = lambda k : h(k, v, self)
+            Q = sorted(v.neighbors.keys(), key=h_key)
+            for k in Q:
                 kd = d + v.edges[k]
                 if shortestPaths[k]["d"] > kd:
                     shortestPaths[k]["d"] = kd
                     shortestPaths[k]["p"] = v.key
-                    self.traverse(v.neighbors[k], kd, shortestPaths)
+                    self.traverse(v.neighbors[k], kd, shortestPaths, h)
+
+    def BFS(self, start_key):
+        h = lambda k, v, m : 1  # arbitrary/unsorted
+        return self.WFS(start_key, h)
     
-    def print_BFS(self, shortestPaths):
+    def dijkstra(self, start_key):
+        h = lambda k, v, m : v.edges[k]  # sorted by weight of edge from current vertex
+        return self.WFS(start_key, h)
+
+    def BFS_SPSP(self, start, end, shortestPaths=None):
+        # returns an array of vertices passed in the shortest path, in order from start -> end
+        if not shortestPaths:
+            shortestPaths = self.BFS(start)  # only compute once, on first recursion
+        if start == end:
+            return []  # base case
+        k = shortestPaths[end]["p"]
+        return self.BFS_SPSP(start, k, shortestPaths) + [k]
+
+    def print_search(self, shortestPaths):
         mapLen = self.size*2-1
         mapStr = [[" "]*mapLen for i in range(mapLen)]
         for y in range(self.size):
@@ -146,15 +166,6 @@ class Map(Graph):
                         mapStr[y*2+1][x*2] = "↓"
         for row in mapStr:
             print(" ".join(row))
-    
-    def BFS_SPSP(self, start, end, shortestPaths=None):
-        # returns an array of vertices passed in the shortest path, in order from start -> end
-        if not shortestPaths:
-            shortestPaths = self.BFS(start)  # only compute once, on first recursion
-        if start == end:
-            return []  # base case
-        k = shortestPaths[end]["p"]
-        return self.BFS_SPSP(start, k, shortestPaths) + [k]
 
     def print_shortest_path(self, path):
         mapLen = self.size*2-1
@@ -181,34 +192,41 @@ class Map(Graph):
             print(" ".join(row))
 
 
+myMap = Map(5, obstacles = [(2, 2), (0, 4)])
+
 def part_A_test():  # Example for part A -->
-    myMap = Map(5, obstacles = [(2, 2), (0, 4)])
+    print("Map, printed prettily:")
     myMap.print_pretty()
     print()
     print("Is (0, 4) an obstacle?", myMap.is_obstacle(0, 4))
     print()
     print("Remove (0, 4) as obstacle:")
     myMap.remove_obstacle(0, 4)
-    print()
     myMap.print_pretty()
     print()
     print("Is (0, 4) an obstacle?", myMap.is_obstacle(0, 4))
     print()
     print("Add (2, 0) as obstacle:")
     myMap.add_obstacle(2, 0)
-    print()
     myMap.print_pretty()
     print()
 
 def part_B_test():  # Example for part B -->
-    print("All shortest paths from BFS:")
-    myMap = Map(5, obstacles = [(2, 2), (0, 4)])
     ps = myMap.BFS((0, 0))
-    myMap.print_BFS(ps)
+    print("All shortest paths to (0, 0) using BFS:")
+    myMap.print_search(ps)
     print()
-    print("SPSP from (0, 0) to (4, 1):")
+    print("SPSP from (0, 0) to (4, 1) using BFS:")
     p = myMap.BFS_SPSP((0, 0), (4, 1))
     myMap.print_shortest_path(p)
+    print()
+
+def part_C_test():  # Example for part C -->
+    ps = myMap.dijkstra((0, 0))
+    print("All shortest paths to (0, 0) using Dijkstra's:")
+    myMap.print_search(ps)
+    print()
 
 part_A_test()
 part_B_test()
+part_C_test()
