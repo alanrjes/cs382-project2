@@ -79,7 +79,6 @@ class Map(Graph):
     
     def print_pretty(self):
         # prints a pretty ASCII picture of the map using different characters for "open" spaces and obstacles
-        # can also show paths, start points, end points, etc
         mapLen = self.size*2-1
         mapStr = [[" "]*mapLen for i in range(mapLen)]
         for y in range(self.size):
@@ -140,15 +139,6 @@ class Map(Graph):
         h = lambda k, v, m : v.edges[k]  # sorted by weight of edge from current vertex
         return self.WFS(start_key, h)
 
-    def BFS_SPSP(self, start, end, shortestPaths=None):
-        # returns an array of vertices passed in the shortest path, in order from start -> end
-        if not shortestPaths:
-            shortestPaths = self.BFS(start)  # only compute once, on first recursion
-        if start == end:
-            return []  # base case
-        k = shortestPaths[end]["p"]
-        return self.BFS_SPSP(start, k, shortestPaths) + [k]
-
     def print_search(self, shortestPaths):
         mapLen = self.size*2-1
         mapStr = [[" "]*mapLen for i in range(mapLen)]
@@ -167,26 +157,37 @@ class Map(Graph):
         for row in mapStr:
             print(" ".join(row))
 
-    def print_shortest_path(self, path):
+    def SPSP(self, start, end, h=lambda k, v, m : 1, shortestPaths=None):
+        # h has same criteria as for WFS, but default BFS
+        # calculate shortestPaths only on first occurrence:
+        if not shortestPaths:
+            shortestPaths = self.WFS(start, h)
+        # returns an array of {"k":key, "d":distance} for each vertex passed in the shortest path, in order from start -> end
+        if start == end:
+            return [{"k":start, "d":0}]  # base case
+        path = shortestPaths[end]
+        return self.SPSP(start, path["p"], h, shortestPaths) + [{"k": end, "d": path["d"]}]
+
+    def print_path(self, path):
         mapLen = self.size*2-1
         mapStr = [[" "]*mapLen for i in range(mapLen)]
         for y in range(self.size):
             for x in range(self.size):
                 if (x, y) in self.vertices:
                     mapStr[y*2][x*2] = "."
-        # draw path after overall map is drawn, easier in this case
-        ps = self.BFS(path[0])  # might be a better way to get distances than to rerun this, but idk
+        # draw path after overall map is drawn, easier this way for ordered array
         for i in range(len(path)):
-            (x, y) = path[i]
-            mapStr[y*2][x*2] = str(ps[(x, y)]["d"])
+            (x, y) = path[i]["k"]
+            d = path[i]["d"]
+            mapStr[y*2][x*2] = str(d)
             if i < len(path)-1:
-                if path[i+1] == (x-1, y):
+                if path[i+1]["k"] == (x-1, y):
                     mapStr[y*2][x*2-1] = "←"
-                if path[i+1] == (x+1, y):
+                if path[i+1]["k"] == (x+1, y):
                     mapStr[y*2][x*2+1] = "→"
-                if path[i+1] == (x, y-1):
+                if path[i+1]["k"] == (x, y-1):
                     mapStr[y*2-1][x*2] = "↑"
-                if path[i+1] == (x, y+1):
+                if path[i+1]["k"] == (x, y+1):
                     mapStr[y*2+1][x*2] = "↓"
         for row in mapStr:
             print(" ".join(row))
@@ -206,8 +207,8 @@ def part_A_test():  # Example for part A -->
     print()
     print("Is (0, 4) an obstacle?", myMap.is_obstacle(0, 4))
     print()
-    print("Add (2, 0) as obstacle:")
-    myMap.add_obstacle(2, 0)
+    print("Add (3, 0) as obstacle:")
+    myMap.add_obstacle(3, 0)
     myMap.print_pretty()
     print()
 
@@ -216,16 +217,19 @@ def part_B_test():  # Example for part B -->
     print("All shortest paths to (0, 0) using BFS:")
     myMap.print_search(ps)
     print()
-    print("SPSP from (0, 0) to (4, 1) using BFS:")
-    p = myMap.BFS_SPSP((0, 0), (4, 1))
-    myMap.print_shortest_path(p)
+    print("SPSP from (0, 0) to (4, 0) using BFS by default:")
+    p = myMap.SPSP((0, 0), (4, 0))
+    myMap.print_path(p)
     print()
 
 def part_C_test():  # Example for part C -->
-    ps = myMap.dijkstra((0, 0))
+    ps = myMap.dijkstra((4, 2))
     print("All shortest paths to (0, 0) using Dijkstra's:")
     myMap.print_search(ps)
     print()
+    print("SPSP from (0, 0) to (4, 1) using WFS Dijkstra's:")
+    p = myMap.SPSP((4, 2), (0, 3), h=lambda k, v, m : v.edges[k])
+    myMap.print_path(p)
 
 part_A_test()
 part_B_test()
