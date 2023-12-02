@@ -159,7 +159,7 @@ All shortest paths to (0, 0) using Dijkstra's:
 ↑   ↑   ↑   ↑   ↑
 6   5   4   3   2
 
-SPSP from (0, 0) to (4, 1) using WFS Dijkstra's:
+SPSP from (4, 2) to (0, 3) using WFS Dijkstra's:
 .   .   .       .
 
 .   .   .   .   .

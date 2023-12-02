@@ -224,10 +224,10 @@ def part_B_test():  # Example for part B -->
 
 def part_C_test():  # Example for part C -->
     ps = myMap.dijkstra((4, 2))
-    print("All shortest paths to (0, 0) using Dijkstra's:")
+    print("All shortest paths to (4, 2) using Dijkstra's:")
     myMap.print_search(ps)
     print()
-    print("SPSP from (0, 0) to (4, 1) using WFS Dijkstra's:")
+    print("SPSP from (4, 2) to (0, 3) using WFS Dijkstra's:")
     p = myMap.SPSP((4, 2), (0, 3), h=lambda k, v, m : v.edges[k])
     myMap.print_path(p)
 
